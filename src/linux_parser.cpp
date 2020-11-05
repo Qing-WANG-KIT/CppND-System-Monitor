@@ -67,29 +67,107 @@ vector<int> LinuxParser::Pids() {
 }
 
 // TODO: Read and return the system memory utilization
-float LinuxParser::MemoryUtilization() { return 0.0; }
+float LinuxParser::MemoryUtilization() { 
+  float mem_toal, mem_free;
+  string line, name;
+  int number;
+  std::ifstream stream(kProcDirectory + kMeminfoFilename);
+  if(stream.is_open()){
+    while (std::getline(stream, line)) {
+      std::istringstream linestream(line);
+      while(linestream >> name >> number) {
+        if (name == "MemTotal:") mem_toal = number;
+        if (name == "MemFree:") mem_free = number;
+      }
+    }
+  }
+  return ((mem_toal - mem_free) / mem_toal); 
+}
 
 // TODO: Read and return the system uptime
-long LinuxParser::UpTime() { return 0; }
+long LinuxParser::UpTime() {
+  long uptime = 0;
+  string line;
+  std::ifstream stream(kProcDirectory + kMeminfoFilename);
+  if(stream.is_open()){
+     getline(stream, line);
+     std::istringstream linestream(line);
+     linestream >> uptime;
+   }
+  return uptime; 
+}
 
 // TODO: Read and return the number of jiffies for the system
-long LinuxParser::Jiffies() { return 0; }
+long LinuxParser::Jiffies() {
+  string line, cpu, user, nice ,system_ ,idle ,iowait , irq ,softirq, steal, guest, guest_nice;
+  std::ifstream stream(kProcDirectory + kMeminfoFilename);
+  if(stream.is_open()){
+    getline(stream, line);
+    std::istringstream linestream(line);
+    linestream >> cpu >> user>> nice >> system_ >>idle >>iowait >> irq >> softirq>>  steal>> guest>> guest_nice;
+  }
+  return stol(user)+stol(nice)+stol(system_)+stol(idle)+stol(iowait)+stol(irq)+stol(softirq)+stol(steal);
+}
 
 // TODO: Read and return the number of active jiffies for a PID
 // REMOVE: [[maybe_unused]] once you define the function
-long LinuxParser::ActiveJiffies(int pid[[maybe_unused]]) { return 0; }
+long LinuxParser::ActiveJiffies(int pid) {
+  std::ifstream stream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatFilename);
+  string value;
+  long utime, stime, cutime, cstime;
+  if(stream.is_open()){
+    for(int i = 1; i < 23; i++) {
+      std::getline(stream, value,' ');
+      switch(i){
+        case 14: utime = stol(value); break;
+        case 15: stime = stol(value); break;
+        case 16: cutime = stol(value); break;
+        case 17: cstime = stol(value); break;
+        default: break;
+      }
+    }
+  }
+  return utime + stime + cutime + cstime;
+}
 
 // TODO: Read and return the number of active jiffies for the system
-long LinuxParser::ActiveJiffies() { return 0; }
+long LinuxParser::ActiveJiffies() {
+  string line, cpu, user, nice, system_, idle, iowait, irq, softirq, steal, guest, guest_nice;
+  std::ifstream stream(kProcDirectory + kMeminfoFilename);
+  if(stream.is_open()){
+    getline(stream, line);
+    std::istringstream linestream(line);
+    linestream >> cpu >> user>> nice >> system_ >>idle >>iowait >> irq >> softirq>>  steal>> guest>> guest_nice;
+  }
+  return stol(user)+stol(nice)+stol(system_)+stol(irq)+stol(softirq)+stol(steal)+stol(guest)+stol(guest_nice);
+}
 
 // TODO: Read and return the number of idle jiffies for the system
-long LinuxParser::IdleJiffies() { return 0; }
+long LinuxParser::IdleJiffies() { return (Jiffies() - ActiveJiffies());}
 
 // TODO: Read and return CPU utilization
-vector<string> LinuxParser::CpuUtilization() { return {}; }
+vector<string> LinuxParser::CpuUtilization() {
+  std::ifstream stream(kProcDirectory + kMeminfoFilename);
+  string line, name, number;  
+}
 
 // TODO: Read and return the total number of processes
-int LinuxParser::TotalProcesses() { return 0; }
+int LinuxParser::TotalProcesses() {
+  int runningProcesses;
+  std::ifstream stream(kProcDirectory + kMeminfoFilename);
+  string line, name, number;
+  if(stream.is_open()) {
+    while (getline(stream, line)) {
+      std::istringstream linestream(line);
+      while(linestream >> name >> number) {
+        if (name == "processes") {
+          runningProcesses = stoi(number);
+        }
+      }
+    }  
+  }
+  return runningProcesses;
+}
 
 // TODO: Read and return the number of running processes
 int LinuxParser::RunningProcesses() { return 0; }
